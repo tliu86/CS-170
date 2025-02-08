@@ -1,4 +1,5 @@
 import heapq
+import copy
 
 class Puzzle:
     def __init__(self, dimensions, initState):
@@ -19,9 +20,56 @@ class Puzzle:
             goalState.append(row)
         return goalState
 
-    def search():
-        #searching
-        print("search")
+    def search(self, heuristicChoice):
+        heap = []
+        previous = {}
+        traversed = set()
+        nodesExpanded = 0
+        maxFrontier = 0 #number of nodes in frontier will be maxFrontier-1 
+
+        heapq.heappush(heap, (0, self.initState))
+        # print(f"Initially: {self.initState}")
+
+        gValue = {self.toString(self.initState): 0}
+        hValue = {self.toString(self.initState): self.heuristic(heuristicChoice, self.initState)}
+
+        while heap:
+            maxFrontier = max(maxFrontier, len(heap))
+
+            cost, current = heapq.heappop(heap)
+            # print(f"Currently: {current}")
+            currentString = self.toString(current)
+            traversed.add(currentString)
+            nodesExpanded += 1
+
+            if current == self.goalState:
+                solution = []
+                while currentString in previous:
+                    solution.append(current)
+                    currentString = previous[currentString]
+                    current = self.fromString(currentString)
+
+                solution.append(self.initState)
+                solution.reverse()
+                depth = formatPuzzle(solution)
+                print(f"Depth: {depth}")
+                print(f"Expanded Nodes: {nodesExpanded}")
+                print(f"Frontier Nodes in Queue: {maxFrontier-1}/{maxFrontier}")
+                return 0 #successfully obtained path from initial state to goal state 
+            
+            for move in self.potentialMoves(current):
+                moveString = self.toString(move)
+                moveCost = gValue[currentString] + 1
+                if moveString not in traversed:
+                    if moveString not in previous or moveCost < gValue[moveString]:
+                        previous[moveString] = currentString
+                        gValue[moveString] = moveCost
+                        hValue[moveString] = self.heuristic(heuristicChoice, move)
+                        heapq.heappush(heap, (gValue[moveString] + hValue[moveString], move))
+                    # else:
+                    #     #bad things happened 
+                    #     raise ValueError("Update to queue failed.")
+
 
     def misplacedTile(self, current):
         misplaced = 0 
@@ -50,11 +98,58 @@ class Puzzle:
             return self.manhattanDistance(current)
         else:
             raise ValueError("Invalid heuristic selected")
+        
+    def potentialMoves(self, current):
+
+        allowedMoves = []
+        for i in range(self.dimensions):
+            for j in range(self.dimensions):
+                if current[i][j] == 0:
+                    blank = f"{i} {j}"
+
+        rBlank = int(blank[0])
+        cBlank = int(blank[2])
+
+        if(rBlank > 0):
+            allowedMoves.append(self.swap(current, rBlank, cBlank, rBlank-1, cBlank))
+        if(rBlank < self.dimensions-1):
+            allowedMoves.append(self.swap(current, rBlank, cBlank, rBlank+1, cBlank))
+        if(cBlank > 0):
+            allowedMoves.append(self.swap(current, rBlank, cBlank, rBlank, cBlank-1))
+        if(cBlank < self.dimensions-1):
+            allowedMoves.append(self.swap(current, rBlank, cBlank, rBlank, cBlank+1))
+        
+        return allowedMoves
+
+    def swap(self, current, r1, c1, r2, c2):
+        tempState = copy.deepcopy(current) #if tempState = current, current would ALSO get modified 
+        tempState[r1][c1] = current[r2][c2]
+        tempState[r2][c2] = current[r1][c1]
+        return tempState
     
     def toString(self, current):
         return " # ".join(" ".join(str(tile) for tile in row) for row in current)
+    
+    def fromString(self, currentString):
+        rows = currentString.split(" # ")
+        state = []
+        for row in rows:
+            state.append([int(tile) for tile in row.split()])
+        return state
+    
+def formatPuzzle(answer):
+    moves = 0
+    for row in answer:
+        print(f"Move {moves}:")
+        for value in row:
+            print(f"{value} ")
+        moves += 1
+        print()
+    return moves-1 #don't want to include the initial state as part of the depth 
+
 
 if __name__ == "__main__":
+    #Hardcoded: 8 puzzle examples 
     depth0 = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
     depth2 = [[1, 2, 3], [4, 5, 6], [0, 7, 8]]
     depth4 = [[1, 2, 3], [5, 0, 6], [4, 7, 8]]
@@ -64,8 +159,6 @@ if __name__ == "__main__":
     depth20 = [[7, 1, 2], [4, 8, 5], [6, 3, 0]]
     depth24 = [[0, 7, 2], [4, 6, 1], [3, 5, 8]]
 
-    eightPuzzle = Puzzle(3, depth8)
-    print(eightPuzzle.manhattanDistance(depth8))
-    print(eightPuzzle.misplacedTile(depth8))
-    print(eightPuzzle.toString(depth8))
-    # print(eightPuzzle.goalState)
+    eightPuzzle = Puzzle(3, depth24)
+
+    answer = eightPuzzle.search(2)
