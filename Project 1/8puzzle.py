@@ -34,11 +34,14 @@ class Puzzle:
         hValue = {self.toString(self.initState): self.heuristic(heuristicChoice, self.initState)}
 
         while heap:
+            if nodesExpanded > 50000: #chosen limit for nodesExpanded (any longer I presume as FAILED)
+                print("Search failed.")
+                return
+            
             maxFrontier = max(maxFrontier, len(heap))
-
             cost, current = heapq.heappop(heap)
-            # print(f"Currently: {current}")
             currentString = self.toString(current)
+            tracePrint(current, gValue[currentString], hValue[currentString]) #comment out to not see ALL expanded nodes
             traversed.add(currentString)
             nodesExpanded += 1
 
@@ -48,14 +51,15 @@ class Puzzle:
                     solution.append(current)
                     currentString = previous[currentString]
                     current = self.fromString(currentString)
-
                 solution.append(self.initState)
                 solution.reverse()
+
+                print("Ideal Solution:")
                 depth = formatPuzzle(solution)
                 print(f"Depth: {depth}")
                 print(f"Expanded Nodes: {nodesExpanded}")
                 print(f"Frontier Nodes in Queue: {maxFrontier-1}/{maxFrontier}")
-                return 0 #successfully obtained path from initial state to goal state 
+                return #successfully obtained path from initial state to goal state 
             
             for move in self.potentialMoves(current):
                 moveString = self.toString(move)
@@ -137,6 +141,12 @@ class Puzzle:
             state.append([int(tile) for tile in row.split()])
         return state
     
+def tracePrint(current, baseCost, heuristicCost):
+    print(f"The best state to expand with a g(n) = {baseCost} and h(n) = {heuristicCost} is...")
+    for row in current:
+        print(row)
+    print()
+    
 def formatPuzzle(answer):
     moves = 0
     for row in answer:
@@ -149,7 +159,7 @@ def formatPuzzle(answer):
 
 
 if __name__ == "__main__":
-    #Hardcoded: 8 puzzle examples 
+    #Hardcoded: 8 puzzle examples, taken from Project 1 instructions 
     depth0 = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
     depth2 = [[1, 2, 3], [4, 5, 6], [0, 7, 8]]
     depth4 = [[1, 2, 3], [5, 0, 6], [4, 7, 8]]
@@ -159,6 +169,34 @@ if __name__ == "__main__":
     depth20 = [[7, 1, 2], [4, 8, 5], [6, 3, 0]]
     depth24 = [[0, 7, 2], [4, 6, 1], [3, 5, 8]]
 
-    eightPuzzle = Puzzle(3, depth24)
+    #Additional hardcoded: examples taken from https://deniz.co/8-puzzle-solver/
+    easy =  [[1, 5, 2], [4, 0, 3], [7, 8, 6]] #depth of 4 
+    hard = [[1, 7, 0], [5, 4, 3], [6, 2, 8]] #depth of 22 
 
-    answer = eightPuzzle.search(2)
+    #Determine what puzzle will be solved 
+    userChoice = int(input("Choose 1 to use a hardcoded puzzle or choose 2 to specifically input a puzzle: "))
+    if(userChoice == 1):
+        puzzle = Puzzle(3, easy) #just changing to hardcoded examples above, no switch statement  
+        # print("Using A* Manhattan Distance Search:\n")
+        # puzzle.search(2) 
+        
+        # for i in range(3):
+        #     puzzle.search(i)
+
+    elif(userChoice == 2):
+        userDimensions = int(input("Enter the dimensions of the puzzle: "))
+        userInitState = []
+
+        for i in range(userDimensions):
+            userRow = []
+            for j in range(userDimensions):
+                userNums = int(input(f"Enter value for row {i} column {j}: "))
+                userRow.append(userNums)
+            userInitState.append(userRow)
+
+        userPuzzle = Puzzle(userDimensions, userInitState)
+        searchAlgo = int(input("Enter (1) for Uniform Cost Search, enter (2) for A* with Displace Tile Heuristic, and enter (3) for A* with Manhattan Distance Heuristic"))
+        userPuzzle.search(searchAlgo)
+    else:
+        print("Invalid selection")
+
