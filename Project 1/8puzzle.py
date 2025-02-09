@@ -41,7 +41,7 @@ class Puzzle:
             maxFrontier = max(maxFrontier, len(heap))
             cost, current = heapq.heappop(heap)
             currentString = self.toString(current)
-            tracePrint(current, gValue[currentString], hValue[currentString]) #comment out to not see ALL expanded nodes
+            # tracePrint(current, gValue[currentString], hValue[currentString]) #comment out to not see ALL expanded nodes
             traversed.add(currentString)
             nodesExpanded += 1
 
@@ -176,12 +176,21 @@ if __name__ == "__main__":
     #Determine what puzzle will be solved 
     userChoice = int(input("Choose 1 to use a hardcoded puzzle or choose 2 to specifically input a puzzle: "))
     if(userChoice == 1):
-        puzzle = Puzzle(3, easy) #just changing to hardcoded examples above, no switch statement  
+        puzzle = Puzzle(3, depth24) #just changing to hardcoded examples above, no switch statement  
         # print("Using A* Manhattan Distance Search:\n")
         # puzzle.search(2) 
         
-        # for i in range(3):
-        #     puzzle.search(i)
+        for i in range(3):
+            if i == 0:
+                search = "Uniform Cost Search: "
+            elif i == 1: 
+                search = "A* with Displaced Tile: "
+            else:
+                search = "A* with Manhattan Distance: "
+
+            print(f"{search}\n")
+            puzzle.search(i)
+            print()
 
     elif(userChoice == 2):
         userDimensions = int(input("Enter the dimensions of the puzzle: "))
