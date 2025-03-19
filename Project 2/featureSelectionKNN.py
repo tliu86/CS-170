@@ -10,9 +10,12 @@ def crossValidation(data, currentFeatures, addFeature, typeOfFeatureSelection):
         numberCorrectClassifed = 0
         count = 0
 
-        if(typeOfFeatureSelection == 0): #choose forward selection
-            testSet = currentFeatures | {addFeature} #temporary set of the DESIRED FEATURES to look at 
-        elif(typeOfFeatureSelection == 1): #choose backward elimination
+        if(typeOfFeatureSelection == 1): #choose forward selection
+            if addFeature != 0:
+                testSet = currentFeatures | {addFeature} #temporary set of the DESIRED FEATURES to look at 
+            else: 
+                testSet = set() #want to test NO features
+        elif(typeOfFeatureSelection == 2): #choose backward elimination
             testSet = currentFeatures ^ {addFeature}
         else: 
             print("Something horrific happened")
@@ -56,7 +59,7 @@ def crossValidation(data, currentFeatures, addFeature, typeOfFeatureSelection):
 
                     if distance < nearestNeighborDistance:
                         nearestNeighborDistance = distance
-                        nearestNeighborLocation = k
+                        # nearestNeighborLocation = k
                         nearestNeighborClassLabel = rows[k].strip().split()[0] #class label of the 'updated' nearest neighbor 
                     # print(f"Ask if {count} is nearest neighbor with {k}; the distance is {distance}")
 
@@ -66,12 +69,15 @@ def crossValidation(data, currentFeatures, addFeature, typeOfFeatureSelection):
                 numberCorrectClassifed += 1
 
     accuracy = numberCorrectClassifed / len(rows)
-    print(f"The accuracy of feature(s) {testSet}: {(accuracy * 100):.1f}%.") #note on backward elimination: if empty set --> assumes class of 1st entry ! (small__94 --> 93/500)
+    print(f"    Using feature(s) {testSet} accuracy is {(accuracy * 100):.1f}%") #note on backward elimination: if empty set --> assumes class of 1st entry ! (small__94 --> 93/500)
     return accuracy
 
 #forward feature selection: start off with an empty feature list, identify the BEST feature to add to feature list,
 #repeat until ALL features are in the list 
-def forwardFeatureSelection(data, typeOfFeatureSelection):
+
+#backward feature elimination: start off with an FULL feature list, identify the WORST feature and remove from the feature list,
+#repeat until ALL features gone from list 
+def featureSelection(data, typeOfFeatureSelection):
     globalBestAccuracy = 0
     globalBestFeatures = set()
 
@@ -79,84 +85,85 @@ def forwardFeatureSelection(data, typeOfFeatureSelection):
         firstLine = dataFile.readline().strip()  
         columns = firstLine.split() #identify the column values: column 1 --> class identification, column 2 and ONWARD --> different features 
         currentFeatures = set()
+
+        if typeOfFeatureSelection == 2:
+            for feature in range(1, len(columns)): #initializes with all possible features 
+                currentFeatures.add(feature) 
         
-        #number of levels = number of features 
+        print("Beginning search.")
+
         for level in range(1, len(columns)): #iterate through all possible levels in the provided data.txt file 
-            print(f"\nOn the {level}th level of the search tree:")
+            # print(f"\nOn the {level}th level of the search tree:")
             featureAdded = 0
             currentBestAccuracy = 0
 
-            for numFeature in range(1, len(columns)): #iterate through all possible features in the provided data.txt file
-                if numFeature not in currentFeatures: #checks all VALID features 
-                    # print(f"Considering adding feature {numFeature}")
-                    accuracy = crossValidation(data, currentFeatures, numFeature, typeOfFeatureSelection) 
+            if typeOfFeatureSelection == 1: #ensures that forward prints out accuracy for set of no features
+                currentBestAccuracy = crossValidation(data, currentFeatures, 0, typeOfFeatureSelection) #no feature tested 
 
-                    '''data = data.txt file, currentFeatures = set of pre-existing features to check,
-                    numFeature = the number of the feature to check (shoudl ensure that I PROPERLY look at said feature)'''
+                print(f"Feature set {currentFeatures} was best, accuracy is {(currentBestAccuracy * 100):.1f}%.")
 
-                    if accuracy > currentBestAccuracy: #finds the MOST accurate feature given a set of features 
-                        currentBestAccuracy = accuracy 
-                        featureAdded = numFeature
-                
-            currentFeatures.add(featureAdded) # adds the MOST accurate feature tested on a given level to the dictionary
-            print(f"\nOn level {level}, I added feature {featureAdded} to the current set. The current set is now {currentFeatures} with an accuracy of {(currentBestAccuracy * 100):.1f}%.")
-
-            if(currentBestAccuracy > globalBestAccuracy):
-                globalBestAccuracy = currentBestAccuracy
-                globalBestFeatures = globalBestFeatures | currentFeatures
-                  
-        print(f"The BEST set of feature(s) is {globalBestFeatures} with an accuracy of {(globalBestAccuracy * 100):.1f}%.")
-
-#backward feature elimination: start off with an FULL feature list, identify the WORST feature and remove from the feature list,
-#repeat until ALL features gone from list 
-def backwardFeatureElimination(data, typeOfFeatureSelection):
-    globalBestAccuracy = 0
-    globalBestFeatures = set()
-
-    with open(data, "r") as dataFile:
-        firstLine = dataFile.readline().strip()  
-        columns = firstLine.split() #identify the column values: column 1 --> class identification, column 2 and ONWARD --> different features 
-        currentFeatures = set() 
-
-        for feature in range(1, len(columns)): #initializes with all possible features 
-            currentFeatures.add(feature) 
-   
-        for level in range(1, len(columns)): #iterate through all possible levels in the provided data.txt file 
-            print(f"\nOn the {level}th level of the search tree:")
-            featureRemoved = 0
-            currentBestAccuracy = 0
+                if(currentBestAccuracy > globalBestAccuracy):
+                    globalBestAccuracy = currentBestAccuracy
+                    globalBestFeatures = globalBestFeatures | currentFeatures
 
             for numFeature in range(1, len(columns)): #iterate through all possible features in the provided data.txt file
-                if numFeature in currentFeatures: #checks all VALID features 
-                    # print(f"Considering removing feature {numFeature}")
-                    accuracy = crossValidation(data, currentFeatures, numFeature, typeOfFeatureSelection) 
+                if typeOfFeatureSelection == 1: 
+                    if numFeature not in currentFeatures: #checks all VALID features 
+                        # print(f"Considering adding feature {numFeature}")
+                        accuracy = crossValidation(data, currentFeatures, numFeature, typeOfFeatureSelection) 
 
-                    if accuracy > currentBestAccuracy: #the higher the accuracy means the more misleading a feature is --> must remove
-                        currentBestAccuracy = accuracy 
-                        featureRemoved = numFeature
-                
-            currentFeatures = currentFeatures ^ {featureRemoved} # removes the WORST feature tested on a given level
-            print(f"\nOn level {level}, I removed feature {featureRemoved} from the current set. The current set is now {currentFeatures} with an accuracy of {(currentBestAccuracy * 100):.1f}%.")
+                        '''data = data.txt file, currentFeatures = set of pre-existing features to check,
+                        numFeature = the number of the feature to check (shoudl ensure that I PROPERLY look at said feature)'''
 
-            if(currentBestAccuracy > globalBestAccuracy):
-                globalBestAccuracy = currentBestAccuracy
-                globalBestFeatures = currentFeatures.copy()
+                        if accuracy > currentBestAccuracy: #finds the MOST accurate feature given a set of features 
+                            currentBestAccuracy = accuracy 
+                            featureAdded = numFeature
+
+                elif typeOfFeatureSelection == 2:
+                    if numFeature in currentFeatures: #checks all VALID features 
+                        # print(f"Considering removing feature {numFeature}")
+                        accuracy = crossValidation(data, currentFeatures, numFeature, typeOfFeatureSelection) 
+
+                        if accuracy > currentBestAccuracy: #the higher the accuracy means the more misleading a feature is --> must remove
+                            currentBestAccuracy = accuracy 
+                            featureRemoved = numFeature
+                else:
+                    print("Something horrific happened")
+                    return
+            
+            if typeOfFeatureSelection == 1: 
+                currentFeatures.add(featureAdded) # adds the MOST accurate feature tested on a given level to the dictionary
+                # print(f"\nOn level {level}, I added feature {featureAdded} to the current set. The current set is now {currentFeatures} with an accuracy of {(currentBestAccuracy * 100):.1f}%.")
+                print(f"Feature set {currentFeatures} was best, accuracy is {(currentBestAccuracy * 100):.1f}%.")
+
+                if(currentBestAccuracy > globalBestAccuracy):
+                    globalBestAccuracy = currentBestAccuracy
+                    globalBestFeatures = globalBestFeatures | currentFeatures
+
+            elif typeOfFeatureSelection == 2:
+                currentFeatures = currentFeatures ^ {featureRemoved} # removes the WORST feature tested on a given level
+                # print(f"\nOn level {level}, I removed feature {featureRemoved} from the current set. The current set is now {currentFeatures} with an accuracy of {(currentBestAccuracy * 100):.1f}%.")
+                print(f"Feature set {currentFeatures} was best, accuracy is {(currentBestAccuracy * 100):.1f}%.")
+
+                if(currentBestAccuracy > globalBestAccuracy):
+                    globalBestAccuracy = currentBestAccuracy
+                    globalBestFeatures = currentFeatures.copy()
                   
-        print(f"The BEST set of feature(s) is {globalBestFeatures} with an accuracy of {(globalBestAccuracy * 100):.1f}%.")
+        print(f"\nFinished search!! The best feature subset is {globalBestFeatures} which has an accuracy of {(globalBestAccuracy * 100):.1f}%")
 
 if __name__ == "__main__":
 
     print("You have entered the Searching Zone!")
-    data = input("Type in the name of the file you want to test: ")
-    typeOfFeatureSelection = int(input("Type the number of the algorithm you want to run.\n     0) Forward Selection\n     1) Backward Eliminiation\n"))
+    data = input("Type in the name of the file to test: ")
+    typeOfFeatureSelection = int(input("Type the number of the algorithm you want to run.\n     1) Forward Selection\n     2) Backward Elimination\n"))
 
-    if(typeOfFeatureSelection > 1 or typeOfFeatureSelection < 0):
+    if(typeOfFeatureSelection > 2 or typeOfFeatureSelection < 1):
         print("Invalid number to select algorithm")
     else: 
-        if typeOfFeatureSelection == 0: #forward selection
-            forwardFeatureSelection(data, typeOfFeatureSelection)
-        elif typeOfFeatureSelection == 1: #backward elimination 
-            backwardFeatureElimination(data, typeOfFeatureSelection)
+        if typeOfFeatureSelection == 1: #forward selection
+            featureSelection(data, typeOfFeatureSelection)
+        elif typeOfFeatureSelection == 2: #backward elimination 
+            featureSelection(data, typeOfFeatureSelection)
         else:
             print("Something horrific happened.")
 
