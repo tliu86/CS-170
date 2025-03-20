@@ -105,7 +105,7 @@ def featureSelection(data, typeOfFeatureSelection):
                     globalBestAccuracy = currentBestAccuracy
                     globalBestFeatures = globalBestFeatures | currentFeatures
         
-        print("Beginning search.\n")
+        print("\nBeginning search.\n")
 
         for level in range(1, len(columns)): #iterate through all possible levels in the provided data.txt file 
             # print(f"\nOn the {level}th level of the search tree:")
