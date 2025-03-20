@@ -153,7 +153,7 @@ def featureSelection(data, typeOfFeatureSelection):
             if typeOfFeatureSelection == 1: 
                 currentFeatures.add(featureAdded) # adds the MOST accurate feature tested on a given level to the dictionary
                 # print(f"\nOn level {level}, I added feature {featureAdded} to the current set. The current set is now {currentFeatures} with an accuracy of {(currentBestAccuracy * 100):.1f}%.")
-                print(f"Feature set {currentFeatures} was best, accuracy is {(currentBestAccuracy * 100):.1f}%.\n")
+                print(f"\nFeature set {currentFeatures} was best, accuracy is {(currentBestAccuracy * 100):.1f}%.\n")
 
                 if(currentBestAccuracy > globalBestAccuracy):
                     globalBestAccuracy = currentBestAccuracy
