@@ -91,19 +91,32 @@ def featureSelection(data, typeOfFeatureSelection):
         currentFeatures = set()
         rows = dataFile.readlines() # know how many instances 
 
-        if typeOfFeatureSelection == 2:
-            for feature in range(1, len(columns)): #initializes with all possible features 
-                currentFeatures.add(feature) 
-
         if typeOfFeatureSelection == 1: #ensures that forward prints out accuracy for set of no features
                 currentBestAccuracy = crossValidation(data, currentFeatures, 0, typeOfFeatureSelection) #no feature tested 
 
                 print(f"\nThis dataset has {len(columns)-1} features (not including the class attribute), with {len(rows)+1} instances.\n")
-                print(f"Running nearest neighbor with all {len(columns)-1} features, using 'leaving-one-out' evaluation, I get an accuracy of {(currentBestAccuracy * 100):.1f}%.\n")
+                print(f"Running nearest neighbor with none of the {len(columns)-1} features, using 'leaving-one-out' evaluation, I get an accuracy of {(currentBestAccuracy * 100):.1f}%.\n")
 
                 if(currentBestAccuracy > globalBestAccuracy):
                     globalBestAccuracy = currentBestAccuracy
                     globalBestFeatures = globalBestFeatures | currentFeatures
+
+        elif typeOfFeatureSelection == 2:
+            for feature in range(1, len(columns)): #initializes with all possible features 
+                currentFeatures.add(feature) 
+            
+            currentBestAccuracy = crossValidation(data, currentFeatures, 0, typeOfFeatureSelection) #no feature tested 
+
+            print(f"\nThis dataset has {len(columns)-1} features (not including the class attribute), with {len(rows)+1} instances.\n")
+            print(f"Running nearest neighbor with all possible {len(columns)-1} features, using 'leaving-one-out' evaluation, I get an accuracy of {(currentBestAccuracy * 100):.1f}%.\n")
+
+            if(currentBestAccuracy > globalBestAccuracy):
+                globalBestAccuracy = currentBestAccuracy
+                globalBestFeatures = globalBestFeatures | currentFeatures
+
+        else:
+            print("Something horrific happened")
+            return
         
         print("\nBeginning search.\n")
 
