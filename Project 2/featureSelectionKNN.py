@@ -70,7 +70,7 @@ def crossValidation(data, currentFeatures, addFeature, typeOfFeatureSelection):
 
     accuracy = numberCorrectClassifed / len(rows)
     
-    produceOutput = typeOfFeatureSelection == 1 and addFeature == 0
+    produceOutput = (typeOfFeatureSelection == 1 and addFeature == 0) or (typeOfFeatureSelection == 2 and addFeature == 0)
 
     if not produceOutput:
         print(f"    Using feature(s) {testSet} accuracy is {(accuracy * 100):.1f}%") #note on backward elimination: if empty set --> assumes class of 1st entry ! (small__94 --> 93/500)
